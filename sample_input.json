@@ -1,0 +1,23 @@
+{
+    "ehr": [
+        "Patient 45M, history of T2DM.",
+        "Presenting with fatigue and polyuria."
+    ],
+    "lab_tests": [
+        [
+            100,
+            20,
+            30
+        ],
+        [
+            110,
+            22,
+            32
+        ],
+        [
+            105,
+            21,
+            31
+        ]
+    ]
+}

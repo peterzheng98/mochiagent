@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+typer
+requests
+numpy
+pandas
+scikit-learn
+pydantic
+duckduckgo-search
