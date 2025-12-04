@@ -1,0 +1,36 @@
+Transformer Inference Tool
+
+DESCRIPTION:
+This tool performs transformer-based inference on Electronic Health Records (EHR) 
+and laboratory test data to predict clinical outcomes and risk assessments.
+
+FUNCTIONALITY:
+- Multi-modal data processing (text + numerical)
+- EHR text encoding using transformer architecture
+- Lab test numerical feature extraction and normalization
+- Cross-modal attention for feature fusion
+- Risk score prediction and categorization
+
+INPUT FORMAT:
+1. ehr_data: List of EHR text records
+   - Each entry should be a string containing clinical notes
+   - Example: ["Patient presents with fatigue", "History of diabetes"]
+
+2. lab_tests: 2D array of lab test values
+   - Rows represent time points or samples
+   - Columns represent different lab test types
+   - Example: [[100, 20, 30], [105, 22, 31]]
+
+OUTPUT FORMAT:
+{
+    "prediction_score": 0.75,       # Risk score 0-1
+    "risk_category": "MODERATE",    # LOW/MODERATE/HIGH
+    "confidence": 0.85,             # Model confidence
+    "probabilities": {...}          # Per-class probabilities
+}
+
+USAGE NOTES:
+- Ensure lab test values are normalized if comparing across different scales
+- More EHR records generally improve prediction accuracy
+- The model works best with standardized medical terminology
+

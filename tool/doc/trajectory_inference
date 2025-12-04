@@ -1,0 +1,47 @@
+Trajectory Inference Tool
+
+DESCRIPTION:
+This tool performs single-cell trajectory inference to identify developmental 
+pathways, disease progression patterns, or temporal ordering in biological data.
+
+FUNCTIONALITY:
+- K-nearest neighbor graph construction
+- Diffusion-based pseudotime computation
+- Branch point detection
+- Trajectory graph generation
+- Lineage analysis
+- Differential expression along trajectory
+
+INPUT FORMAT:
+1. data: 2D feature matrix (cells/samples x genes/features)
+   - Rows are individual cells or samples
+   - Columns are features (genes, measurements)
+   - Example: [[0.5, 1.2, ...], [0.8, 1.1, ...], ...]
+
+2. cell_ids: Optional list of cell/sample identifiers
+   - Example: ["cell_1", "cell_2", ...]
+
+3. root_cell: Optional index of root cell for trajectory
+
+OUTPUT FORMAT:
+{
+    "pseudotime": {
+        "values": [0.0, 0.15, 0.32, ...],
+        "cell_ids": ["cell_1", "cell_2", ...]
+    },
+    "graph": {
+        "nodes": [...],
+        "edges": [...],
+        "type": "trajectory_graph"
+    },
+    "branch_points": [
+        {"pseudotime": 0.4, "confidence": 0.85}
+    ]
+}
+
+USAGE NOTES:
+- Data should be preprocessed (normalized, scaled)
+- Root cell selection affects trajectory direction
+- Branch detection sensitivity controlled by min_branch_length
+- Supports multiple trajectory algorithms: monocle3, slingshot, paga
+

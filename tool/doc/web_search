@@ -1,0 +1,41 @@
+Web Search Tool
+
+DESCRIPTION:
+This tool performs web searches using DuckDuckGo to find relevant medical 
+information, clinical evidence, and research findings related to a query.
+
+FUNCTIONALITY:
+- DuckDuckGo API integration for web search
+- Medical domain filtering and prioritization
+- Search result synthesis and reasoning
+- Literature database searching (PubMed, etc.)
+- Clinical finding validation
+
+INPUT FORMAT:
+1. query: Search query string
+   - Should be specific and medically relevant
+   - Example: "diabetes type 2 treatment guidelines 2024"
+
+2. max_results: Maximum number of results (default: 10)
+
+3. context: Optional context for reasoning synthesis
+
+OUTPUT FORMAT:
+{
+    "query": "original query",
+    "results": [
+        {
+            "title": "Result title",
+            "url": "https://...",
+            "snippet": "Brief description..."
+        }
+    ],
+    "reasoning": "Synthesized reasoning based on results..."
+}
+
+USAGE NOTES:
+- Use specific medical terminology for better results
+- Consider rate limits when making multiple searches
+- Results are cached for 1 hour to reduce API calls
+- Medical sources are prioritized in result ranking
+

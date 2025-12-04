@@ -1,0 +1,173 @@
+{
+    "transformer_inference": {
+        "tool_name": "transformer_inference",
+        "description": "Performs transformer-based inference on EHR and lab test data to predict clinical outcomes. Uses multi-modal fusion of text and numerical features.",
+        "input": [
+            {
+                "name": "ehr_data",
+                "type": "list[str]",
+                "description": "List of Electronic Health Record text entries"
+            },
+            {
+                "name": "lab_tests",
+                "type": "list[list[float]]",
+                "description": "2D array of lab test values (samples x features)"
+            }
+        ],
+        "output": [
+            {
+                "name": "prediction_score",
+                "type": "float",
+                "description": "Predicted risk score between 0 and 1"
+            },
+            {
+                "name": "risk_category",
+                "type": "str",
+                "description": "Risk category: LOW, MODERATE, or HIGH"
+            },
+            {
+                "name": "confidence",
+                "type": "float",
+                "description": "Model confidence in the prediction"
+            }
+        ]
+    },
+    "web_search": {
+        "tool_name": "web_search",
+        "description": "Searches the web using DuckDuckGo to find medical information and clinical evidence related to a query.",
+        "input": [
+            {
+                "name": "query",
+                "type": "str",
+                "description": "Search query string"
+            },
+            {
+                "name": "max_results",
+                "type": "int",
+                "description": "Maximum number of search results to return"
+            }
+        ],
+        "output": [
+            {
+                "name": "results",
+                "type": "list[dict]",
+                "description": "List of search results with title, url, and snippet"
+            },
+            {
+                "name": "reasoning",
+                "type": "str",
+                "description": "Synthesized reasoning based on search results"
+            }
+        ]
+    },
+    "trajectory_inference": {
+        "tool_name": "trajectory_inference",
+        "description": "Performs single-cell trajectory inference to identify developmental or disease progression pathways in the data.",
+        "input": [
+            {
+                "name": "data",
+                "type": "list[list[float]]",
+                "description": "Expression or feature matrix (cells/samples x features)"
+            },
+            {
+                "name": "cell_ids",
+                "type": "list[str]",
+                "description": "Optional cell/sample identifiers"
+            }
+        ],
+        "output": [
+            {
+                "name": "pseudotime",
+                "type": "list[float]",
+                "description": "Pseudotime values for each cell/sample"
+            },
+            {
+                "name": "graph",
+                "type": "dict",
+                "description": "Trajectory graph with nodes and edges"
+            },
+            {
+                "name": "branch_points",
+                "type": "list[dict]",
+                "description": "Detected branching points in the trajectory"
+            }
+        ]
+    },
+    "clustering": {
+        "tool_name": "clustering",
+        "description": "Performs clustering analysis on data to identify groups or subpopulations.",
+        "input": [
+            {
+                "name": "data",
+                "type": "list[list[float]]",
+                "description": "Feature matrix (samples x features)"
+            },
+            {
+                "name": "algorithm",
+                "type": "str",
+                "description": "Clustering algorithm: kmeans, leiden, hierarchical"
+            },
+            {
+                "name": "n_clusters",
+                "type": "int",
+                "description": "Number of clusters (optional, auto-detected if not specified)"
+            }
+        ],
+        "output": [
+            {
+                "name": "labels",
+                "type": "list[int]",
+                "description": "Cluster labels for each sample"
+            },
+            {
+                "name": "clusters",
+                "type": "dict",
+                "description": "Cluster information including centroids and statistics"
+            },
+            {
+                "name": "quality_metrics",
+                "type": "dict",
+                "description": "Clustering quality metrics like silhouette score"
+            }
+        ]
+    },
+    "risk_assessment": {
+        "tool_name": "risk_assessment",
+        "description": "Performs comprehensive risk assessment combining multiple analysis methods.",
+        "input": [
+            {
+                "name": "ehr_data",
+                "type": "list[str]",
+                "description": "List of EHR records"
+            },
+            {
+                "name": "lab_tests",
+                "type": "list[list[float]]",
+                "description": "Lab test values"
+            },
+            {
+                "name": "assessment_type",
+                "type": "str",
+                "description": "Type of assessment: basic, comprehensive, detailed"
+            }
+        ],
+        "output": [
+            {
+                "name": "overall_risk",
+                "type": "str",
+                "description": "Overall risk category"
+            },
+            {
+                "name": "risk_factors",
+                "type": "list[dict]",
+                "description": "Identified risk factors"
+            },
+            {
+                "name": "recommendations",
+                "type": "list[str]",
+                "description": "Clinical recommendations"
+            }
+        ]
+    }
+}
+
