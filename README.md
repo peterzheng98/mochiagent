@@ -93,20 +93,6 @@ python web.py --port 8000
 
 Then open http://localhost:8000 in your browser.
 
-### Demo Script
-
-Run the demo with sample data:
-```bash
-python demo.py --task diabetes
-python demo.py --task cardiac
-python demo.py --task renal
-```
-
-With MCP servers:
-```bash
-python demo.py --task diabetes --start-servers
-```
-
 ## Input Format
 
 The agent expects JSON input with two required fields:
@@ -114,8 +100,7 @@ The agent expects JSON input with two required fields:
 ```json
 {
     "ehr": [
-        "Patient 45M, history of T2DM.",
-        "Presenting with fatigue and polyuria."
+        "Patient 45M, history of T2DM."
     ],
     "lab_tests": [
         [126, 7.2, 180, 45, 150],
