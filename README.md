@@ -14,7 +14,7 @@ MochiAgent/
     demo.py               # Demo script
     cli.py                # Command-line interface
     web.py                # Web interface (FastAPI)
-    ehrformer/            # EHRFormer training, validation, baseline, and plotting utilities
+    embedding-deprecated/ # (Deprecated)
     server/               # MCP Server implementations
         base.py           # Base server classes
         transformer_server.py   # serves the MoChiFormer engine (see mochiformer/)
