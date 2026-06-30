@@ -16,12 +16,20 @@ MochiAgent/
     web.py                # Web interface (FastAPI)
     server/               # MCP Server implementations
         base.py           # Base server classes
-        transformer_server.py
+        transformer_server.py   # serves the MoChiFormer engine (see mochiformer/)
         websearch_server.py
         trajectory_server.py
         clustering_server.py
         gpt_server.py
         code_executor.py
+    mochiformer/          # MoChiFormer core model (trainable; real, not placeholder)
+        config.py         # MoChiFormerConfig + demo_config
+        model.py          # BERT visit-encoder + GPT-2 temporal decoder + heads
+        data.py           # discretization, tokenizer, dataset, synthetic cohort
+        train.py          # pretrain + finetune + checkpoint I/O (CLI: `demo`)
+        inference.py      # MoChiFormerPredictor (load -> predict) + raw adapter
+        README.md         # paper<->code mapping, scope, quickstart
+    checkpoints/          # trained MoChiFormer checkpoints (e.g. mochiformer_demo.ckpt)
     scripts/              # Core scripts
         chat.py           # Chat session management
         component.py      # Task and status components
@@ -31,17 +39,56 @@ MochiAgent/
         doc/              # Tool documentation
         code/             # Tool implementations
     templates/            # Web interface templates
+    tests/                # Smoke test (train -> infer -> serve)
     data/                 # Sample data
 ```
 
 ## Features
 
-- **Transformer Inference**: Multi-modal prediction using EHR text and lab test numerical data
+- **Transformer Inference (MoChiFormer)**: A real, trainable longitudinal-EHR transformer (BERT visit-encoder + GPT-2 temporal decoder) that predicts disease risk and biological age from discretized lab + EHR sequences. See [`mochiformer/`](mochiformer/README.md).
 - **Web Search & Reasoning**: DuckDuckGo integration for medical information retrieval and reasoning
 - **Trajectory Inference**: Single-cell trajectory analysis with pseudotime computation
 - **Clustering**: Multiple algorithms (K-means, Leiden, Hierarchical) for pattern discovery
 - **MCP Protocol**: Standardized server communication with tools, resources, and prompts
 - **Dual Interfaces**: CLI for batch processing and Web UI for interactive analysis
+
+## MoChiFormer (core model)
+
+The transformer tool is backed by **MoChiFormer**, the longitudinal-EHR
+foundation model described in the paper (Methods, "The core prediction model:
+MoChiFormer"). It lives in [`mochiformer/`](mochiformer/README.md) and is a real,
+trainable PyTorch model — a BERT visit-encoder + GPT-2 temporal decoder with
+optional VAE/KL and cohort-adversarial de-biasing, focal-loss multi-disease
+heads, and age regression — operating on discretized lab + structured-EHR
+sequences.
+
+It supports the full train → infer → serve loop:
+
+```bash
+# from the mochiagent/ directory
+PY=python   # use a Python env with torch + transformers installed
+
+# 1. Train a self-contained synthetic demo -> checkpoints/mochiformer_demo.ckpt
+$PY -m mochiformer.train demo --out checkpoints/mochiformer_demo.ckpt
+
+# 2. End-to-end smoke test (train -> infer -> serve)
+$PY tests/test_smoke.py
+```
+
+At serve time, `server/transformer_server.py` automatically loads
+`checkpoints/mochiformer_demo.ckpt` (override with `MOCHIFORMER_CKPT=/path.ckpt`)
+and runs real inference through the `predict` tool. If torch or a checkpoint is
+unavailable it degrades to a clearly-labelled placeholder so the rest of the
+system still runs.
+
+Extra dependencies beyond the base `requirements.txt`:
+`torch`, `transformers` (see [`mochiformer/requirements.txt`](mochiformer/requirements.txt)).
+
+> The bundled demo checkpoint is trained on **synthetic** data — it demonstrates
+> that the code is correct and runnable, not clinical performance. Train on real,
+> schema-matched data for meaningful predictions. See
+> [`mochiformer/README.md`](mochiformer/README.md) for the paper↔code mapping,
+> how to plug in real data, and what is intentionally out of scope.
 
 ## Installation
 
