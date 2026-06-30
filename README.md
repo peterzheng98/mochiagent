@@ -14,7 +14,6 @@ MochiAgent/
     demo.py               # Demo script
     cli.py                # Command-line interface
     web.py                # Web interface (FastAPI)
-    embedding-deprecated/ # (Deprecated)
     server/               # MCP Server implementations
         base.py           # Base server classes
         transformer_server.py   # serves the MoChiFormer engine (see mochiformer/)

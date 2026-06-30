@@ -51,7 +51,7 @@ class MoChiFormerPredictor:
         return cls(model, cfg, schema, device=device)
 
     # ---- core batched prediction --------------------------------------------
-    @torch.no_grad()
+    @torch.inference_mode()
     def predict_records(self, records: List[PatientRecord]) -> List[Dict[str, Any]]:
         from .data import LongitudinalEHRDataset, make_collate
         from torch.utils.data import DataLoader

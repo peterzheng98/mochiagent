@@ -374,7 +374,8 @@ class MoChiFormer(nn.Module):
         return out
 
     # ---- finetune / inference (patient-level) ---------------------------
-    def forward(self, cat_feats, float_feats, event_feats, valid_mask, time_index, cohort_id=None):
+    def forward(self, cat_feats, float_feats, event_feats, valid_mask, time_index,
+                cohort_id=None, compute_aux: bool = True):
         # apply the anti-leakage event shift before encoding
         event_in = self._shift_events(event_feats)
         cls_emb, _ = self._encode_visits(cat_feats, float_feats, event_in)
@@ -394,14 +395,17 @@ class MoChiFormer(nn.Module):
 
         cls_logits, reg_preds = self.task_heads(hidden)
 
+        # Training-only auxiliary heads (cohort-adversarial de-biasing and the
+        # pairwise-relation head). Skipped at inference (compute_aux=False) to
+        # avoid their attention-pooling / discriminator compute.
         cohort_logits = None
-        if self.cohort_disc is not None:
-            pooled = masked_mean(hidden, valid_mask)            # [B, H]
-            cohort_logits = self.cohort_disc(grad_reverse(pooled, self.grl_lambda))
-
         rel_scores = None
-        if self.rel_head is not None:
-            rel_scores = self.rel_head(hidden, valid_mask, self.grl_lambda)  # [B, n_pairs]
+        if compute_aux:
+            if self.cohort_disc is not None:
+                pooled = masked_mean(hidden, valid_mask)            # [B, H]
+                cohort_logits = self.cohort_disc(grad_reverse(pooled, self.grl_lambda))
+            if self.rel_head is not None:
+                rel_scores = self.rel_head(hidden, valid_mask, self.grl_lambda)  # [B, n_pairs]
 
         return {
             "hidden": hidden,
@@ -414,9 +418,9 @@ class MoChiFormer(nn.Module):
         }
 
     # ---- convenience: patient-level predictions for inference ------------
-    @torch.no_grad()
+    @torch.inference_mode()
     def predict_patient(self, cat_feats, float_feats, event_feats, valid_mask, time_index) -> Dict[str, torch.Tensor]:
-        out = self.forward(cat_feats, float_feats, event_feats, valid_mask, time_index)
+        out = self.forward(cat_feats, float_feats, event_feats, valid_mask, time_index, compute_aux=False)
         # per-visit positive prob = sigmoid(logit_1 - logit_0); patient = masked mean over visits
         cls_probs = []
         for logits in out["cls_logits"]:
