@@ -1,10 +1,32 @@
 import json
+import os
 import random
 import numpy as np
 from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime
 
 from server.base import MCPServer
+
+# The real MoChiFormer engine is optional at import time: the server stays
+# importable (and degrades to a clearly-labelled placeholder) when torch / the
+# mochiformer package / a checkpoint are unavailable.
+try:
+    from mochiformer.inference import MoChiFormerPredictor
+    _HAS_MOCHIFORMER = True
+    _MOCHIFORMER_IMPORT_ERROR = None
+except Exception as _e:  # pragma: no cover - import guard
+    MoChiFormerPredictor = None  # type: ignore
+    _HAS_MOCHIFORMER = False
+    _MOCHIFORMER_IMPORT_ERROR = str(_e)
+
+
+def _default_checkpoint_path() -> str:
+    """Resolve the MoChiFormer checkpoint: env override, else bundled demo."""
+    env = os.environ.get("MOCHIFORMER_CKPT")
+    if env:
+        return env
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .../mochiagent
+    return os.path.join(here, "checkpoints", "mochiformer_demo.ckpt")
 
 
 class TransformerMCPServer(MCPServer):
@@ -37,7 +59,8 @@ class TransformerMCPServer(MCPServer):
         self.device = device
         self.model = None
         self.tokenizer = None
-        
+        self.predictor = None  # MoChiFormerPredictor when a checkpoint is available
+
         # Default Redis keys for transformer server
         task_queue_key = kwargs.pop("task_queue_key", "mochiagent:transformer:task")
         result_queue_key = kwargs.pop("result_queue_key", "mochiagent:transformer:result")
@@ -51,12 +74,28 @@ class TransformerMCPServer(MCPServer):
         self._initialize_model()
     
     def _initialize_model(self) -> None:
-        """Initialize the transformer model and tokenizer."""
+        """Load the trained MoChiFormer engine, or fall back to placeholder mode."""
         self._log_info(f"Initializing transformer model: {self.model_name}")
-        # In production, load actual model here
-        # self.model = AutoModel.from_pretrained(self.model_path)
-        # self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
-        self._log_info("Model initialization complete (placeholder mode)")
+        if not _HAS_MOCHIFORMER:
+            self._log_warning(
+                f"MoChiFormer unavailable ({_MOCHIFORMER_IMPORT_ERROR}); "
+                "running in placeholder mode."
+            )
+            return
+        ckpt = self.model_path or _default_checkpoint_path()
+        if not os.path.exists(ckpt):
+            self._log_warning(
+                f"No MoChiFormer checkpoint at {ckpt}; running in placeholder mode. "
+                "Train one with: python -m mochiformer.train demo"
+            )
+            return
+        try:
+            self.predictor = MoChiFormerPredictor.from_checkpoint(ckpt, device=self.device)
+            self.model_name = "MoChiFormer"
+            self._log_info(f"Loaded MoChiFormer checkpoint: {ckpt} (device={self.predictor.device})")
+        except Exception as e:  # pragma: no cover - defensive
+            self.predictor = None
+            self._log_error(f"Failed to load MoChiFormer checkpoint ({e}); placeholder mode.")
     
     def _register_tools(self) -> None:
         """Register transformer-specific tools."""
@@ -225,6 +264,43 @@ class TransformerMCPServer(MCPServer):
             }
         }
     
+    def _predict_with_model(
+        self,
+        ehr_data: List[str],
+        lab_tests: List[List[Any]],
+        return_embeddings: bool = False
+    ) -> Dict[str, Any]:
+        """Run real MoChiFormer inference and map it to the tool's result schema."""
+        raw = self.predictor.predict_raw(
+            ehr_data, lab_tests, return_embedding=return_embeddings
+        )
+        prediction = {
+            "prediction_score": raw["prediction_score"],
+            "confidence": raw["confidence"],
+            "risk_category": raw["risk_category"],
+            "top_disease": raw.get("top_disease"),
+            "disease_probabilities": raw.get("disease_probabilities", {}),
+            "biological_age": raw.get("biological_age", {}),
+        }
+        result = {
+            "status": "success",
+            "prediction": prediction,
+            "preprocessing_info": {
+                "ehr_count": raw.get("n_ehr_records", len(ehr_data)),
+                "n_visits": raw.get("n_visits"),
+                "lab_shape": list(np.array(lab_tests, dtype=object).shape) if lab_tests else [0],
+            },
+            "model_info": {
+                "name": self.model_name,
+                "device": str(self.predictor.device),
+                "engine": "mochiformer",
+            },
+            "timestamp": datetime.now().isoformat(),
+        }
+        if return_embeddings and "patient_embedding" in raw:
+            result["embeddings"] = {"patient_embedding": raw["patient_embedding"]}
+        return result
+
     def _tool_predict(
         self,
         ehr_data: List[str],
@@ -243,7 +319,12 @@ class TransformerMCPServer(MCPServer):
             Prediction results including score, confidence, and risk category
         """
         self._log_info(f"Processing prediction request: {len(ehr_data)} EHR records, {len(lab_tests)} lab test rows")
-        
+
+        # Preferred path: real MoChiFormer inference.
+        if self.predictor is not None:
+            return self._predict_with_model(ehr_data, lab_tests, return_embeddings)
+
+        # Fallback: placeholder mode (no trained checkpoint available).
         # Preprocessing
         preprocessed_ehr = self._preprocess_ehr(ehr_data)
         preprocessed_lab = self._preprocess_lab_tests(lab_tests)

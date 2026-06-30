@@ -1,0 +1,6 @@
+# MoChiFormer core-model dependencies (in addition to mochiagent's own).
+# Validated with torch 2.9.1+cu128, transformers 4.57.5.
+torch>=2.0.0
+transformers>=4.30.0
+numpy>=1.23.0
+scikit-learn>=1.2.0
