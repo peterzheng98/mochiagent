@@ -239,6 +239,12 @@ Start development server with auto-reload:
 python web.py --reload
 ```
 
+## Previous version
+
+The previous old committed version of this repository is available on GitHub at commit. You can use it if it contains compatiability problem.
+[`2ccaba6`](https://github.com/peterzheng98/mochiagent/commit/2ccaba63746754ae0e524b5a2bc7e6369f45d67f).
+
+
 ## License
 
 MIT License
